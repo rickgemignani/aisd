@@ -1,0 +1,20 @@
+# .gitignore for AISD Methodology
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Temporary files
+*.tmp
+*.bak
+.~*
+
+# Build artifacts (if generating PDFs, etc.)
+build/
+dist/
+*.pdf
+
