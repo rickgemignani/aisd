@@ -181,7 +181,7 @@ Given [CHANGE], infer prior design decisions relevant to [CHANGE] (for example p
 4. **Context precision** - Small, focused files (200-500 lines) enable selective loading
 5. **Domain isolation** - Prevents cascade loading (User → Order → Product → ...)
 6. **Multiple complementary docs** - business-rules + behavior + integration + data-model + tests + architecture
-7. **Based on existing patterns** - Expands CLAUDE.md approach to complete systems
+7. **Based on existing patterns** - Expands AI tool config files (CLAUDE.md, AGENTS.md, GEMINI.md) to complete systems
 
 **Format principles**:
 - **Tables instead of prose** - Scannable, not walls of text
@@ -418,7 +418,7 @@ Skip it when:
 
 ### Primary Use: AI-Generated Documentation
 
-**AISD docs are AI-authored from human input**:
+**AI authors AISD docs by analyzing human requirements, reverse engineering existing code, and distilling current documentation**:
 
 | Human Input | AI Generates AISD | AI Uses AISD For |
 |-------------|-------------------|------------------|
@@ -500,9 +500,9 @@ Common workflow (Cursor, Claude Code):
 
 This isn't purely theoretical:
 
-**Claude Code's CLAUDE.md pattern**: Anthropic's own tool loads a CLAUDE.md file to understand project-specific context. Teams are already doing this informally.
+**AI tool configuration files**: Claude Code (CLAUDE.md), Cursor (AGENTS.md), Gemini (GEMINI.md) all load project-specific context files. Teams are already doing this informally.
 
-**What we're doing**: Expanding that idea into a complete system:
+**What we're doing**: Expanding that pattern into a complete system:
 - Not just one file, but structured docs across domains
 - Not just guidelines, but data models, behaviors, tests, architecture
 - Not just for AI tool config, but as intermediate representation between intent and code
@@ -538,7 +538,7 @@ This isn't purely theoretical:
 - Track missing dependencies
 - Share your data (we need this!)
 
-**Current status**: Promising informal results, but no rigorous testing. We're expanding on patterns people are already using (like CLAUDE.md), trying to formalize what works.
+**Current status**: Promising informal results, but no rigorous testing. We're expanding on patterns people are already using (AI tool config files like CLAUDE.md, AGENTS.md, GEMINI.md), trying to formalize what works.
 
 See [roadmap.md](roadmap.md) for what we're still figuring out.
 
