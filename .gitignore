@@ -7,6 +7,8 @@
 *.swo
 *~
 .DS_Store
+.claude/
+*.code-workspace
 
 # Temporary files
 *.tmp
