@@ -189,32 +189,6 @@ A documentation format that creates a high-density abstraction layer over your c
 **Not**: Magic AI agent that does everything
 **Is**: A format that compresses signal, cuts noise, documents as you go
 
-## The Problem
-
-You're using Cursor or Claude Code on a real codebase.
-
-**Common scenarios:**
-
-**Analyzing**: "Why can users only get 3 refunds per year?"
-- AI loads 30 files looking for the business rule
-- Burns 50k tokens reading implementation details
-- Finds conflicting logic in multiple places
-- Gives you an uncertain answer
-
-**Planning**: "How would I add fraud detection to refunds?"
-- AI loads refund service, user service, payment processing
-- Misses the dependency on email notifications
-- Doesn't realize inventory needs updating
-- Plan has gaps you discover during implementation
-
-**Implementing**: "Add email when refund is denied"
-- AI generates code that looks right
-- Misses the audit logging requirement
-- Breaks the existing fraud check
-- You explain the constraint again
-
-**Why**: Even with 200k token windows, AI loads files speculatively. Most of what it loads is noise (imports, boilerplate, implementation). The signal is scattered across code, comments, and tribal knowledge.
-
 ## The AISD Approach
 
 Create high-density maps of what matters. AI loads those instead of wandering through code.
@@ -424,28 +398,6 @@ Each AISD doc is:
 - A savepoint (captures what you know)
 - Context for AI (structured, explicit)
 - Docs for humans (useful even if AI fails)
-
----
-
-## Why This Works
-
-**For analyzing:**
-- **Without AISD**: AI loads 10 files, finds conflicting logic, gives uncertain answer
-- **With AISD**: AI loads `business-rules.md` (50 lines), sees authoritative rule in table
-
-**For planning:**
-- **Without AISD**: AI misses dependencies, plan has gaps discovered during coding
-- **With AISD**: AI loads `integration.md` + `behavior.md`, sees all cross-domain calls upfront
-
-**For implementing:**
-- **Without AISD**: AI generates code, misses constraint, you explain again
-- **With AISD**: Constraint is in docs AI already loaded, or you catch the gap in doc review
-
-**For PRs:**
-- **Without AISD**: Reviewer reads 500 lines of code changes, guesses at intent
-- **With AISD**: Reviewer reads updated docs first (20 lines), sees what changed and why
-
-**The docs are your savepoint**. If AI fails at any stage, reset and improve the docs.
 
 ---
 
@@ -700,66 +652,6 @@ Common workflow (Cursor, Claude Code):
 - Onboarding (narrative, not structured)
 
 **Why**: These require human voice and persuasive structure, not factual specs.
-
----
-
-## Validation
-
-### Optional Automated Checks
-
-```bash
-# Line count check
-wc -l docs/**/*.md | awk '$1 > 500 {print $2 ": " $1 " lines (max 500)"}'
-
-# Average line length check (max 40 chars/line, non-empty lines)
-for file in docs/**/*.md; do
-  non_empty=$(grep -c '[^[:space:]]' "$file")
-  chars=$(wc -c < "$file")
-  avg=$(( chars / non_empty ))
-  [ $avg -gt 40 ] && echo "$file: $avg chars/line (max 40)"
-done
-
-# Forbidden words
-grep -rn "should\|might\|could\|typically\|usually" docs/ --include="*.md"
-```
-
-### Pre-commit Hook
-
-Add to `.git/hooks/pre-commit`:
-
-```bash
-#!/bin/bash
-set -e
-
-echo "Checking AISD docs..."
-
-# Check for forbidden words in staged docs
-if git diff --cached --name-only | grep '\.md$' | xargs grep -n "should\|might\|could\|typically\|usually" 2>/dev/null; then
-  echo "❌ ERROR: Found forbidden words in docs"
-  echo "Use MUST/REQUIRED/FORBIDDEN instead"
-  exit 1
-fi
-
-# Check line counts
-git diff --cached --name-only | grep '\.md$' | while read file; do
-  lines=$(wc -l < "$file")
-  if [ $lines -gt 500 ]; then
-    echo "⚠️  WARNING: $file has $lines lines (max 500)"
-  fi
-done
-
-# Check average line length (max 40 chars/line, non-empty)
-git diff --cached --name-only | grep '\.md$' | while read file; do
-  non_empty=$(grep -c '[^[:space:]]' "$file" || echo 1)
-  chars=$(wc -c < "$file")
-  avg=$(( chars / non_empty ))
-  if [ $avg -gt 40 ]; then
-    echo "⚠️  WARNING: $file has $avg chars/line (max 40)"
-  fi
-done
-
-echo "✅ Docs OK"
-```
 
 ---
 
