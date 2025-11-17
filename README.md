@@ -169,17 +169,27 @@ Given [CHANGE], infer prior design decisions relevant to [CHANGE] (for example p
 
 ---
 
-## What Is AISD?
+## Understanding AISD
 
-A documentation format that creates a high-density abstraction layer over your codebase.
+**What it is**: A documentation format that creates a high-density abstraction layer over your codebase.
 
-**Key ideas:**
+**What makes it different**:
+
+1. **AI-authored, human-reviewed** - AI generates docs in AISD format, you review diffs in git
+2. **Intermediate representation** - Bridge between human intent and generated code
+3. **Signal over noise** - Tables, explicit constraints, MUST/REQUIRED (not prose and "should")
+4. **Context precision** - Small, focused files (200-500 lines) enable selective loading
+5. **Domain isolation** - Prevents cascade loading (User → Order → Product → ...)
+6. **Multiple complementary docs** - business-rules + behavior + integration + data-model + tests + architecture
+7. **Based on existing patterns** - Expands CLAUDE.md approach to complete systems
+
+**Format principles**:
 - **Tables instead of prose** - Scannable, not walls of text
 - **MUST/REQUIRED instead of "should"** - Unambiguous, not vague
 - **Explicit constraints instead of descriptions** - "1-200 chars" not "short"
 - **Small files (200-500 lines) instead of monoliths** - Selective loading
 
-**What it does:**
+**What it does**:
 - **Reduces tokens** - AI loads 3,000 lines of specs instead of 50,000 lines of code
 - **Documents decisions** - Architecture, responsibilities, constraints captured as you build
 - **Enables analysis** - AI answers questions about your system from structured docs, not scattered code
@@ -189,11 +199,13 @@ A documentation format that creates a high-density abstraction layer over your c
 **Not**: Magic AI agent that does everything
 **Is**: A format that compresses signal, cuts noise, documents as you go
 
-## The AISD Approach
+---
+
+## Example: Fraud Detection
+
+**Scenario**: Adding fraud detection to a refund system.
 
 Create high-density maps of what matters. AI loads those instead of wandering through code.
-
-**Example: Adding fraud detection**
 
 **Step 1: Create AISD docs for the refund system**
 
@@ -293,21 +305,7 @@ AI spends tokens on what matters.
 
 ---
 
-## Core Principles
-
-**What makes AISD different**:
-
-1. **AI-authored, human-reviewed** - AI generates docs in AISD format, you review diffs in git
-2. **Intermediate representation** - Bridge between human intent and generated code
-3. **Signal over noise** - Tables, explicit constraints, MUST/REQUIRED (not prose and "should")
-4. **Context precision** - Small, focused files (200-500 lines) enable selective loading
-5. **Domain isolation** - Prevents cascade loading (User → Order → Product → ...)
-6. **Multiple complementary docs** - business-rules + behavior + integration + data-model + tests + architecture
-7. **Based on existing patterns** - Expands CLAUDE.md approach to complete systems
-
----
-
-## Try It (When AI Keeps Failing)
+## Troubleshooting: AI Keeps Failing
 
 **Scenario**: You're asking AI to make a change. It keeps getting it wrong.
 
@@ -401,7 +399,11 @@ Each AISD doc is:
 
 ---
 
-## You Don't Need to Use AISD for Everything
+## Scope & Limitations
+
+**AISD is a tool, not a religion.**
+
+### When to Use AISD
 
 Use it when:
 - AI keeps missing the same constraint
@@ -413,167 +415,6 @@ Skip it when:
 - One-line bug fix
 - AI got it right the first time
 - The code is self-explanatory
-
-**AISD is a tool, not a religion.**
-
----
-
-## Real-World Evidence
-
-This isn't purely theoretical:
-
-**Claude Code's CLAUDE.md pattern**: Anthropic's own tool loads a CLAUDE.md file to understand project-specific context. Teams are already doing this informally.
-
-**What we're doing**: Expanding that idea into a complete system:
-- Not just one file, but structured docs across domains
-- Not just guidelines, but data models, behaviors, tests, architecture
-- Not just for AI tool config, but as intermediate representation between intent and code
-
-**Our experiments** (informal, but promising):
-- Faster iterations when AI has structured specs vs raw code
-- Fewer missing dependencies when integration.md exists
-- Better test coverage when tests.md defines scenarios upfront
-
-**What we need**: More formal testing, more users, more data.
-
----
-
-## Want to Help?
-
-**We're looking for collaborators, testers, and skeptics.**
-
-**If you want to try AISD**:
-1. Pick a small feature or module in your project
-2. Work with AI to create 2-3 AISD docs (use [style-guide.md](style-guide.md) for format rules)
-3. Try making a code change using those docs
-4. Report back: Did it help? Hurt? Make no difference?
-
-**If you want to challenge it**:
-- Where does the format break down?
-- What's missing for your domain?
-- What's over-engineered?
-- Open issues, propose changes
-
-**If you want to measure it**:
-- Compare AI iterations with/without AISD
-- Measure tokens used
-- Track missing dependencies
-- Share your data (we need this!)
-
-**Current status**: Promising informal results, but no rigorous testing. We're expanding on patterns people are already using (like CLAUDE.md), trying to formalize what works.
-
-See [roadmap.md](roadmap.md) for what we're still figuring out.
-
-**Questions? Ideas? Critiques?** Open an issue. We're figuring this out together.
-
----
-
-## Format Principles
-
-**Why these principles matter when AI writes docs**:
-
-### 1. Brutal Conciseness
-AI doesn't get tired of verbosity, but context windows are finite.
-
-Every word costs tokens. AI generates only essential content.
-
-### 2. Tables Over Prose
-AI parses structured data more reliably than prose.
-
-Tables = unambiguous. Prose = interpretation needed.
-
-### 3. Authoritative Language
-MUST/REQUIRED/FORBIDDEN removes ambiguity.
-
-AI doesn't interpret "should" the same way twice.
-
-### 4. Explicit Constraints
-AI needs exact specifications, not fuzzy concepts.
-
-"1-200 characters" generates correct validation. "Reasonable length" doesn't.
-
-### 5. File Size Limits
-200-500 lines per file enables selective loading.
-
-AI loads files programmatically. Small files = flexible context composition.
-
-### 6. Context Precision
-Prevents cascade loading and context explosion.
-
-Primitive references = Self-contained files, no chain dependencies (User → Order → Product → ...).
-
----
-
-## File Structure
-
-### Standard Layout
-
-```
-docs/
-├── index.md              # System overview (<100 lines)
-├── domain-a/
-│   ├── index.md          # Domain overview (<100 lines)
-│   ├── model.md          # Entities, fields, constraints (200-500 lines)
-│   └── behavior.md       # Operations, rules, scenarios (200-500 lines)
-└── domain-b/
-    ├── index.md
-    ├── model.md
-    └── behavior.md
-```
-
-### File Types
-
-| Type | Size | Purpose | Example |
-|------|------|---------|---------|
-| Index | <100 lines | Navigation, orientation | `docs/index.md`, `docs/tasks/index.md` |
-| Spec | 200-500 lines | Entities, behaviors, tests | `model.md`, `behavior.md` |
-| Max | 1000 lines | Hard limit, split if exceeded | N/A |
-
----
-
-## What AISD Helps With
-
-### Use AISD for:
-
-1. **Token reduction** - Load 3k lines of structured docs instead of 50k lines of code
-2. **Codebase analysis** - AI answers questions from authoritative docs, not scattered code
-3. **Change planning** - See dependencies and edge cases before writing code
-4. **Code generation** - AI has complete context without loading 30 files
-5. **PR reviews** - Docs show what changed; code shows how
-6. **Architecture documentation** - Decisions and responsibilities captured as you build
-7. **Onboarding AI** - New AI session loads docs, understands system in seconds
-
-### Expected improvements:
-
-**Before AISD**:
-- AI loads 30 files speculatively, burns 50k tokens, still misses context
-- Explanations scattered across code, comments, old PRs
-- Planning reveals gaps during implementation
-- PRs are pure code review with guessed intent
-- Each new AI session starts from zero
-
-**After AISD**:
-- AI loads 5-6 targeted docs, burns 3k tokens, has complete picture
-- Single source of truth for rules, architecture, decisions
-- Planning reveals gaps before coding (cheaper to fix)
-- PRs show intent in docs, implementation in code
-- New AI session loads docs, ready to work
-
-**Note**: LLMs use stochastic decoding, so outputs vary. AISD reduces variability but doesn't guarantee identical outputs.
-
----
-
-## Files in This Standard
-
-| File | Focus | Use |
-|------|-------|-----|
-| [style-guide.md](style-guide.md) | Writing principles | Language, formatting guidelines |
-| [best-practices.md](best-practices.md) | Organization patterns | File structure, context loading |
-| [templates/](templates/) | Example templates | TODO - Will demonstrate AISD format |
-
----
-
-## When to Use AISD
 
 ### Primary Use: AI-Generated Documentation
 
@@ -655,9 +496,101 @@ Common workflow (Cursor, Claude Code):
 
 ---
 
-## Quick Links
+## Evidence & Status
 
-**Ready to try it?** See ["Want to Help?"](#want-to-help) above for how to get started.
+This isn't purely theoretical:
+
+**Claude Code's CLAUDE.md pattern**: Anthropic's own tool loads a CLAUDE.md file to understand project-specific context. Teams are already doing this informally.
+
+**What we're doing**: Expanding that idea into a complete system:
+- Not just one file, but structured docs across domains
+- Not just guidelines, but data models, behaviors, tests, architecture
+- Not just for AI tool config, but as intermediate representation between intent and code
+
+**Our experiments** (informal, but promising):
+- Faster iterations when AI has structured specs vs raw code
+- Fewer missing dependencies when integration.md exists
+- Better test coverage when tests.md defines scenarios upfront
+
+**What we need**: More formal testing, more users, more data.
+
+---
+
+## Contributing
+
+**We're looking for collaborators, testers, and skeptics.**
+
+**If you want to try AISD**:
+1. Pick a small feature or module in your project
+2. Work with AI to create 2-3 AISD docs (use [style-guide.md](style-guide.md) for format rules)
+3. Try making a code change using those docs
+4. Report back: Did it help? Hurt? Make no difference?
+
+**If you want to challenge it**:
+- Where does the format break down?
+- What's missing for your domain?
+- What's over-engineered?
+- Open issues, propose changes
+
+**If you want to measure it**:
+- Compare AI iterations with/without AISD
+- Measure tokens used
+- Track missing dependencies
+- Share your data (we need this!)
+
+**Current status**: Promising informal results, but no rigorous testing. We're expanding on patterns people are already using (like CLAUDE.md), trying to formalize what works.
+
+See [roadmap.md](roadmap.md) for what we're still figuring out.
+
+**Questions? Ideas? Critiques?** Open an issue. We're figuring this out together.
+
+---
+
+## What AISD Helps With
+
+### Use AISD for:
+
+1. **Token reduction** - Load 3k lines of structured docs instead of 50k lines of code
+2. **Codebase analysis** - AI answers questions from authoritative docs, not scattered code
+3. **Change planning** - See dependencies and edge cases before writing code
+4. **Code generation** - AI has complete context without loading 30 files
+5. **PR reviews** - Docs show what changed; code shows how
+6. **Architecture documentation** - Decisions and responsibilities captured as you build
+7. **Onboarding AI** - New AI session loads docs, understands system in seconds
+
+### Expected improvements:
+
+**Before AISD**:
+- AI loads 30 files speculatively, burns 50k tokens, still misses context
+- Explanations scattered across code, comments, old PRs
+- Planning reveals gaps during implementation
+- PRs are pure code review with guessed intent
+- Each new AI session starts from zero
+
+**After AISD**:
+- AI loads 5-6 targeted docs, burns 3k tokens, has complete picture
+- Single source of truth for rules, architecture, decisions
+- Planning reveals gaps before coding (cheaper to fix)
+- PRs show intent in docs, implementation in code
+- New AI session loads docs, ready to work
+
+**Note**: LLMs use stochastic decoding, so outputs vary. AISD reduces variability but doesn't guarantee identical outputs.
+
+---
+
+## Files in This Standard
+
+| File | Focus | Use |
+|------|-------|-----|
+| [style-guide.md](style-guide.md) | Writing principles | Language, formatting guidelines |
+| [best-practices.md](best-practices.md) | Organization patterns | File structure, context loading |
+| [templates/](templates/) | Example templates | TODO - Will demonstrate AISD format |
+
+---
+
+## Next Steps
+
+**Ready to try it?** See [Contributing](#contributing) above for how to get started.
 
 **Format details**:
 - [style-guide.md](style-guide.md) - Language rules, formatting, examples
