@@ -201,201 +201,321 @@ Given [CHANGE], infer prior design decisions relevant to [CHANGE] (for example p
 
 ---
 
-## Example: Fraud Detection
+## Example: Adding Rate Limiting to a Legacy API
 
-**Scenario**: Adding fraud detection to a refund system.
+**Note**: This example is fictional but represents scenarios the author has experienced repeatedly while using AI coding tools. Your mileage may vary.
 
-Create high-density maps of what matters. AI loads those instead of wandering through code.
+**Context**: 5-year-old e-commerce system. 12 domains. Scattered docs. Comments don't match code. Variables named `temp`, `data`, `handler2`. Few tests. You need to add rate limiting to checkout to prevent abuse.
 
-**Step 1: Create AISD docs for the refund system**
+### Without AISD: The Chaos Loop
 
-Working with AI (using AISD format rules), you generate:
+You ask Claude Code: "Add rate limiting to checkout API"
 
-**`docs/refunds/business-rules.md`** (40 lines)
-```markdown
-| Condition | Rule |
-|-----------|------|
-| Time window | Within 30 days of purchase |
-| Product condition | MUST be unused |
-| Refund limit | Max 3 per user per 12 months |
-```
+**What happens**:
 
-**`docs/refunds/behavior.md`** (120 lines)
-```markdown
-## ProcessRefund
+AI loads 8 files speculatively. Finds:
+- Comment says "CheckoutService handles payment" (wrong - it delegates to PaymentProcessor)
+- Variable `ctxData` actually holds user session + cart + inventory locks
+- Rate limiting exists in auth layer (not documented, AI misses it)
+- Checkout calls 4 other domains via events (Spring ApplicationEventPublisher, IoC pattern, AI doesn't trace it)
 
-**Preconditions**:
-- Purchase within 30 days
-- Product unused
-- User refund count ≤3 in past 12 months
+AI generates code. Adds rate limiter to CheckoutService. Looks good.
 
-**Returns**: Success | Denied(reason)
+You test. Rate limiting triggers twice (auth filter + new code). Inventory locks timeout. Checkout breaks.
 
-**Side effects**: Records refund in user history
-```
+You explain: "There's already rate limiting in the auth filter"
 
-**`docs/users/integration.md`** (80 lines)
-```markdown
-## Refunds Integration
+AI apologizes profusely. Removes new code, updates auth filter instead. Now checkout works but login is rate limited too aggressively. Users can't log in more than 20 times per minute.
 
-**Provides**: GetRefundHistory(user_id, days) → count
+You explain: "Only checkout needs stricter limits, not all endpoints"
 
-**Required data**:
-- user_id
-- refund_timestamps[]
-```
+AI tries again. Adds config property `auth.checkoutRateLimit`. Updates AuthenticationFilter with conditional logic. Updates 3 files. Tests pass locally. You commit.
 
-**`docs/refunds/data-model.md`** (100 lines)
-```markdown
-## Refund
+**2 hours in.**
 
-| Field | Type | Constraints |
-|-------|------|-------------|
-| id | UUID | Required |
-| user_id | UUID | Required, FK to users |
-| amount | Decimal | >0 |
-| timestamp | DateTime | Required |
-| reason | String | 1-500 chars |
-```
+PR review: "Why did you refactor the entire auth filter? This was supposed to be a checkout change."
 
-**`docs/architecture.md`** (updated, 250 lines total)
-```markdown
-## Cross-Domain Dependencies
+You look at the diff. AI refactored:
+- Error handling (extracted new ErrorResponseBuilder class)
+- Configuration loading (extracted new RateLimitConfig class)
+- IP address extraction (renamed method, changed implementation)
+- Logging (switched from log.info to structured logging)
+- Variable names (temp → rateLimitState, data → requestContext)
 
-- refunds → users (fraud check)
-- refunds → payments (transaction reversal)
-- refunds → inventory (restock)
-```
+Hundreds of lines changed across 6 files for a "simple" 20 req/min limit.
 
-**`docs/refunds/tests.md`** (60 lines)
-```markdown
-| Scenario | Refunds (12mo) | Expected |
-|----------|----------------|----------|
-| New user | 0 | Allow |
-| At limit | 3 | Allow |
-| Over limit | 4 | Deny |
-| Old refunds | 4 (13mo ago) | Allow |
-```
+You: "Why did you change all this unrelated code?"
 
-**Total**: ~650 lines of AISD docs
+AI: "I noticed some code quality issues while implementing the feature. I improved error handling consistency, extracted configuration into a dedicated class following single responsibility principle, and made logging more structured for better observability."
 
-**Step 2: Review and commit the abstraction**
+Reviewer: "Please simplify. I can't tell what's related to rate limiting and what's refactoring. This needs to be two separate PRs."
 
-You see the complete system design in structured form. Way easier to review than scattered code.
+You try to split it. Ask AI: "Revert all the refactoring, keep only the rate limit change"
 
-**Step 3: AI uses AISD to generate code**
+AI generates new code. But now it's confused about which version is "before refactoring." Creates a mix:
+- Keeps ErrorResponseBuilder (from refactor)
+- Reverts to old config loading (but references new RateLimitConfig class that no longer exists)
+- Half-renamed variables (temp in one method, rateLimitState in another)
 
-**Without AISD**: AI loads 30 files (12,000 lines), burns 50k tokens just understanding the system
+Compile errors everywhere.
 
-**With AISD**: AI loads 6 docs (650 lines), burns 3k tokens, has complete picture
+You: "This is broken. Start over. Load my original code and add ONLY the checkout rate limit."
 
-Generates:
-- Refund service (fraud validation)
-- User service updates (history tracking)
-- Database migration (refund_history)
-- All 4 test scenarios from tests.md
-- Integration glue (cross-domain calls)
+AI loads files again. Finds same misleading comment. Makes same wrong assumption. Suggests adding rate limiter to CheckoutService again.
 
-**The win**: Not about context limits. It's about signal-to-noise ratio.
+You: "NO. We already tried that. There's existing rate limiting in the auth filter."
 
-- 30 code files = 95% noise (imports, syntax, boilerplate)
-- 6 AISD docs = 95% signal (rules, constraints, relationships)
+AI: "I apologize for the confusion. Let me check the auth filter."
 
-AI spends tokens on what matters.
+Loads AuthenticationFilter. Sees the code you just reverted (from the failed PR attempt). Gets confused about current state.
+
+AI: "I see rate limiting in the auth filter for checkout. Should I remove it?"
+
+You: "THAT'S FROM THE BROKEN PR. That code doesn't exist in main. Start from main branch."
+
+AI: "Let me start fresh."
+
+Repeats the entire cycle. LoadsCheckout files. Finds same misleading comment. Makes same mistake.
+
+**4 hours in.** You've explained the same thing 5 times. AI keeps refactoring. PR is blocked. Reviewer is frustrated. You're debugging AI's understanding instead of fixing code.
+
+You close the PR. Start completely over tomorrow with a clear head.
 
 ---
 
-## Troubleshooting: AI Keeps Failing
+### With AISD: Structured Analysis → Planning → Implementation
 
-**Scenario**: You're asking AI to make a change. It keeps getting it wrong.
+Same task. Same messy codebase. Different approach.
 
-You've tried:
-- Explaining it differently
-- Resetting context and starting over
-- Pointing out the specific mistake
-- Re-reading the same code files
+#### Phase 1: Map Current State
 
-**Try this instead**: Create savepoints.
+**You**:
+```
+Analyze the checkout domain architecture - what components exist, how they communicate, and what dependencies exist. Create docs/checkout/architecture.md following @style-guide.md
+```
 
-### The Workflow
+AI generates `docs/checkout/architecture.md`:
+- CheckoutController → CheckoutService → PaymentProcessor → BillingClient
+- CheckoutService → InventoryService (via ApplicationEventPublisher, Spring events)
+- CheckoutService → NotificationService (via ApplicationEventPublisher)
+- Existing rate limiting in AuthenticationFilter (applies to all endpoints)
 
-**1. AI is fucking up on a task**
+**You review**: Wait, there's already rate limiting? Let me verify.
 
-Example: "Add email notifications when refund is denied"
+**You check code**: Yes, in AuthenticationFilter. Good catch.
 
-AI keeps:
-- Missing the fraud detection rule
-- Breaking the existing refund flow
-- Forgetting to log the denial reason
+**But**: AI says "applies to all endpoints" - is that true?
 
-**2. Generate AISD docs with the context AI needs (like explaining to a junior engineer)**
+**You**: "Show the auth filter configuration and explain which endpoints it applies to"
 
-What would you write down? Maybe:
+AI: "It's in SecurityConfig. Applies to `/api/**` pattern."
 
-**`docs/refunds/behavior.md`**:
+**You**: "Does checkout use `/api/**` pattern?"
+
+AI checks: "Yes, CheckoutController is mapped to `/api/checkout`"
+
+**You**: "Update architecture.md to clarify this - existing rate limit DOES apply to checkout"
+
+AI updates doc. **Caught AI's first misunderstanding in 2 minutes, in docs, not code.**
+
+You commit: "docs: map checkout architecture and rate limiting baseline"
+
+**Next**:
+```
+Extract the business rules and constraints for the checkout domain. Create docs/checkout/business-rules.md following @style-guide.md
+```
+
+AI generates `docs/checkout/business-rules.md`:
+
 ```markdown
-## ProcessRefund
-
-**Preconditions**:
-- User refund count MUST be ≤3 in past 12 months
-- Purchase MUST be within 30 days
-
-**Returns**:
-- Success → send confirmation email
-- Denied → send denial email with reason
-
-**Side effects**:
-- Log refund attempt (success or failure)
-- Record denial reason in audit table
+| Rule | Constraint |
+|------|------------|
+| Inventory lock timeout | 5 minutes |
+| Payment retry limit | 3 attempts |
+| Checkout session TTL | 15 minutes |
+| Rate limit (global) | 100 req/min per IP |
 ```
 
-**`docs/notifications/behavior.md`**:
+**You review**: Looks right.
+
+**But wait**: Is it really per IP? Or per user?
+
+**You**: "Verify: is rate limiting per IP or per user ID?"
+
+AI checks filter code: "Per IP address (extracts from HttpServletRequest.getRemoteAddr())"
+
+**You**: Good. Commit.
+
+```
+Map the end-to-end data flow for checkout - from request to response, including all intermediate steps. Create docs/checkout/data-flow.md following @style-guide.md
+```
+
+AI generates `docs/checkout/data-flow.md`:
+
 ```markdown
-## Email Notifications
+## Checkout Flow
 
-**RefundDenied email**:
-- Recipient: User email
-- Subject: "Refund Request Denied"
-- Body MUST include denial reason
-- Send async (don't block refund flow)
+1. CheckoutController receives request
+2. AuthenticationFilter validates (applies global rate limit)
+3. CheckoutService.processCheckout()
+   - Validates cart
+   - Publishes InventoryLockEvent (async, Spring ApplicationEventPublisher)
+   - Calls PaymentProcessor.charge()
+   - Publishes OrderCreatedEvent (async)
+4. Returns OrderConfirmation
 ```
 
-**Format**: Tables, MUST/REQUIRED, explicit constraints. No "should" or vague descriptions.
+**You review**: Wait, step order looks wrong.
 
-**3. Add docs to context and ask AI again**
+**You**: "Does AuthenticationFilter run before or after controller method?"
 
-```
-I've created docs/refunds/behavior.md and docs/notifications/behavior.md
-explaining the refund flow and email requirements.
+AI: "Before - it's a servlet filter, runs before request reaches controller."
 
-Read those files. Then add email notifications when refund is denied.
-```
+**You**: "Then why is CheckoutController step 1 if AuthenticationFilter runs first?"
 
-**You lose nothing**. If AI still fails, you have:
-- Docs that help you understand the system
-- A savepoint to reset to (git reset --hard)
-- Clear specs to review before code
+AI: "You're right. Let me fix the order."
 
-**4. AI still getting it wrong? Create more docs**
+AI updates - filter becomes step 1, controller step 2. **Another misunderstanding caught in docs.**
 
-AI is confused about the fraud detection logic?
+**You**: Better. Commit.
 
-Create `docs/refunds/business-rules.md`:
-```markdown
-| Condition | Rule |
-|-----------|------|
-| Refund limit | FORBIDDEN if user >3 refunds in 12 months |
-| Timeframe | Count refunds from current date - 365 days |
-```
+**Baseline: 3 AISD docs. AI made 2 mistakes. You caught both in ~5 minutes, in plain text, not in broken code.**
 
-Add it to context. Reset git changes. Ask again.
+---
 
-**5. Repeat until AI gets it or you realize AI can't do this task**
+#### Phase 2: Plan the Change
 
-Each AISD doc is:
-- A savepoint (captures what you know)
-- Context for AI (structured, explicit)
-- Docs for humans (useful even if AI fails)
+**You**: "I need to add stricter rate limiting to checkout (20 req/min). Update the docs to show the planned changes."
+
+AI updates `docs/checkout/business-rules.md`, `architecture.md`, creates `implementation-plan.md`.
+
+**You review the plan**. Something feels wrong.
+
+**You**: "If both AuthenticationFilter (100/min) and CheckoutRateLimiter (20/min) run, which triggers first?"
+
+AI: "AuthenticationFilter runs first (servlet filter), so it would block at 100/min before checkout limit applies."
+
+**You**: "That's wrong. If auth allows 100/min, checkout will never see its 20/min limit."
+
+AI: "You're right. We need checkout limit to run first, or set auth limit higher for checkout endpoint, or exempt checkout from auth filter."
+
+**You**: "Which approach is cleaner?"
+
+AI: "Run checkout limit in controller (after auth) but make it stricter. Since auth is 100/min, checkout 20/min will be the effective limit."
+
+**You**: "Update implementation-plan.md to explain this. Also add a test that verifies both limits work correctly together."
+
+AI updates plan. **Third mistake caught, in planning, before any code written.**
+
+You review. Clear now. Commit: "docs: plan checkout rate limiting (20 req/min)"
+
+---
+
+#### Phase 3: Implement
+
+**You**: "Generate tests for the rate limiter based on implementation-plan.md"
+
+AI creates `CheckoutRateLimiterTest.java`.
+
+**You**: Run tests → All fail (no implementation yet). Expected.
+
+**You**: "Implement CheckoutRateLimiter based on implementation-plan.md"
+
+AI creates `CheckoutRateLimiter.java`.
+
+**You review code**: Uses simple counter.
+
+**You**: "This uses a simple counter. What happens if the application restarts?"
+
+AI: "Counter resets and users can bypass the limit."
+
+**You**: "Fix it."
+
+AI updates to use Redis. **Fourth mistake caught in code review.**
+
+**You**: Run tests → 3 pass, 1 fails (timing issue).
+
+**You**: "Fix the reset window test"
+
+AI fixes timing logic. Tests pass.
+
+**You**: "Create @RateLimited annotation and aspect per plan"
+
+AI creates. You review: aspect has caching logic.
+
+**You**: "Why cache the annotation lookup? This runs once per request, caching adds complexity for no benefit."
+
+AI: "You're right, removing cache."
+
+**Fifth mistake caught.** But you're still moving forward, not in a refactor loop.
+
+**You**: "Update CheckoutController per plan"
+
+AI adds `@RateLimited` annotation.
+
+**You**: "Add exception handler"
+
+AI updates handler.
+
+**You**: "Add config property"
+
+AI updates application.yml.
+
+**You**: Run full suite → All pass.
+
+**You**: "Update AISD docs to reflect implementation (remove 'planned' markers)"
+
+AI updates docs.
+
+**You**: Commit: "feat: add checkout rate limiting (20 req/min)"
+
+**Total time: 95 minutes. AI made 5 mistakes. You caught all 5 before they became expensive. No refactoring tangents. No chaos loops.**
+
+---
+
+### The PR
+
+**Files changed**: 11 (4 docs, 7 code)
+
+**Reviewer opens PR**:
+1. Reads `implementation-plan.md` - understands intent immediately
+2. Sees business-rules.md and architecture.md diffs - knows what changed
+3. Reviews code - matches plan exactly
+4. Checks: no unexpected refactoring, no renamed variables, no extracted classes
+5. Approves in 10 minutes
+
+---
+
+### Why It Worked
+
+**AI made the same mistakes in both approaches**:
+- Misunderstood filter order
+- Didn't think about restart persistence
+- Over-engineered with unnecessary caching
+- Got confused about limit precedence
+- Plus the hidden rate limiting in auth filter
+
+**Without AISD**:
+- Mistakes discovered during testing, debugging, PR review
+- Each fix spawned new changes ("while I'm here, let me refactor...")
+- Lost track of what changed and why
+- PR became unmergeable chaos
+- 4 hours, no working solution
+
+**With AISD**:
+- Same mistakes caught during doc review (2-5 min each)
+- Fixed in docs or code review, not in production code
+- Plan kept AI focused (no "improvements")
+- PR clean, focused, reviewable
+- 95 minutes, approved
+
+**Cost of fixing mistakes**:
+- In AISD docs: 2 minutes (edit text)
+- In code review: 5 minutes (small change)
+- In broken code after refactoring: 20+ minutes (untangle mess)
+- In blocked PR after reviewer pushback: hours (restart from scratch)
+
+**AISD doesn't make AI smarter. It makes AI mistakes less expensive.**
 
 ---
 
