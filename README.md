@@ -1,38 +1,177 @@
 # AISD: AI Small Docs
 
-**Stop writing docs for AI. Let AI write them for itself.**
+**Documentation format optimized for AI consumption.**
 
-*Because if AI is going to hallucinate anyway, at least make it hallucinate in a review-friendly format first.*
+**50,000 lines of code → 3,000 lines of structured abstractions.**
+
+**AI generates them. You review them. AI uses them for analysis, planning, implementation, and review.**
 
 ---
 
-## Why?
+## Philosophy
 
-AI keeps missing your requirements. You explain the constraints again. It breaks something else. You reset and try different words.
+**Code is for machines. Traditional docs are for humans. AISD is for AI.**
 
-**What if you wrote down what you'd tell a junior engineer, then gave that to AI instead?**
+When AI reads your code, it drowns in noise. When AI reads prose docs, it drowns in ambiguity. AISD is the signal extracted - structured, explicit, dense.
 
-That's AISD. A format for those docs.
+Think of it as: Human intent → AI abstraction → Human review → AI implementation
+
+You're not writing docs. AI is. You're reviewing them like code.
+
+---
+
+## The Problem You Already Have
+
+You're using Cursor or Claude Code on a real codebase.
+
+**When you ask AI to analyze**: "Why do we limit refunds to 3 per year?"
+- AI loads 30 files searching for the business rule
+- Burns 50k tokens on imports and boilerplate
+- Finds conflicting logic in different places
+- Gives you an uncertain answer
+
+**When you ask AI to plan**: "How would I add fraud detection?"
+- AI loads everything it thinks is relevant
+- Misses cross-domain dependencies
+- Plan looks good until you start coding
+- You discover gaps during implementation
+
+**When you ask AI to implement**: "Add email notifications for denials"
+- AI generates code that compiles
+- Misses the audit logging requirement
+- Breaks an existing constraint
+- You explain it again
+
+**The issue**: AI loads files speculatively, burning tokens on syntax and boilerplate. Your codebase is 95% implementation noise, 5% signal. The architecture decisions, business constraints, and cross-domain contracts AI actually needs? Scattered across code, comments, old PRs, and conversations nobody documented.
+
+**What if there was a compressed abstraction?** 3,000 lines of structured docs capturing what matters. AI loads those instead of wandering through code.
+
+That's AISD. AI writes the docs, you review them like code, AI uses them for everything.
 
 ---
 
 ## Is This For You?
 
 **Try AISD if:**
-- ✅ You're using Cursor, Claude Code, or similar AI coding tools
-- ✅ AI keeps missing constraints or breaking things
-- ✅ You explain the same thing 3+ times per task
+- ✅ You're using AI coding tools (Cursor, Claude Code, etc.)
+- ✅ You want AI to understand your system without loading 30 files
+- ✅ You want architecture and decisions documented as PRs happen
+- ✅ You explain the same thing repeatedly to AI
+- ✅ You need to reduce token usage for large codebases
 
 **Skip AISD if:**
-- ❌ AI gets it right the first time
+- ❌ AI gets it right the first time, every time
 - ❌ You're doing simple CRUD with no complex rules
-- ❌ Your code is already self-documenting
+- ❌ Your codebase is small enough AI can load everything
+
+---
+
+## Quick Start (5 Minutes)
+
+**Get started**:
+1. Download [style-guide.md](style-guide.md) to your project (you don't need to read it, AI will)
+2. Optionally read [best-practices.md](best-practices.md) (skip if you're in a hurry)
+3. Open Cursor/Claude Code in your project
+4. Run one of these prompts (replace `[CHANGE]` with your actual change):
+
+**Example prompts** (pick what you need):
+
+**Architecture overview**:
+```
+Given [CHANGE], summarise the high-level architecture (main components, how they communicate, and key dependencies) and highlight which parts are most likely impacted by [CHANGE]. Write that research to docs/architecture-overview.md using the following style guide @style-guide.md.
+```
+
+**Business rules and invariants**:
+```
+Given [CHANGE], extract the key business rules and invariants for the affected domain, show where they are implemented, and explain how [CHANGE] would modify or add to those rules. Write that research to docs/business-rules-and-invariants.md using the following style guide @style-guide.md.
+```
+
+**Implementation change plan**:
+```
+Given [CHANGE], propose a step-by-step implementation plan (code edits, new files, tests, migrations) in dependency order, optimised to minimise blast radius and keep changes local. Write that research to docs/implementation-change-plan.md using the following style guide @style-guide.md.
+```
+
+<details>
+<summary><strong>More prompts (click to expand)</strong></summary>
+
+**Module and package responsibilities**:
+```
+Given [CHANGE], list each module/package and its primary responsibilities, and identify which ones own the behavior or data most directly related to [CHANGE]. Write that research to docs/module-responsibilities.md using the following style guide @style-guide.md.
+```
+
+**Domain models and schemas**:
+```
+Given [CHANGE], map the main domain models/schemas (entities, DTOs, DB tables), their relationships, and show exactly where [CHANGE] would require new fields or updates. Write that research to docs/domain-model-and-schemas.md using the following style guide @style-guide.md.
+```
+
+**Data flow and lifecycle**:
+```
+Given [CHANGE], describe the end-to-end data flow and lifecycle for the relevant entities (from input to persistence and back), and point out all steps where [CHANGE] would alter this flow. Write that research to docs/data-flow-lifecycle.md using the following style guide @style-guide.md.
+```
+
+**Entry points (APIs, jobs, UI)**:
+```
+Given [CHANGE], list the main entry points (HTTP endpoints, message handlers, CLI commands, scheduled jobs) and indicate which ones read or write the data or behavior involved in [CHANGE]. Write that research to docs/entry-points-analysis.md using the following style guide @style-guide.md.
+```
+
+**External integrations and providers**:
+```
+Given [CHANGE], identify all external API integrations (clients, SDKs, adapters), show the abstraction layers around them, and indicate the best place to implement [CHANGE] (for example swapping a provider or changing a call). Write that research to docs/external-integrations-analysis.md using the following style guide @style-guide.md.
+```
+
+**Persistence layer impact**:
+```
+Given [CHANGE], describe the persistence layer (DB tables, ORM models, repositories, caching, queues) and list the exact artefacts that must change to support [CHANGE]. Write that research to docs/persistence-layer-impact.md using the following style guide @style-guide.md.
+```
+
+**Cross-cutting concerns**:
+```
+Given [CHANGE], identify cross-cutting concerns (auth, permissions, validation, error handling, transactions, logging) that apply to the flows touched by [CHANGE], and highlight anything that must also be updated. Write that research to docs/cross-cutting-concerns.md using the following style guide @style-guide.md.
+```
+
+**Design patterns and conventions**:
+```
+Given [CHANGE], summarise the main design patterns and conventions used (layering, DDD patterns, naming, folder structure) and give concrete guidance on how to implement [CHANGE] in a way that stays consistent. Write that research to docs/design-patterns-and-conventions.md using the following style guide @style-guide.md.
+```
+
+**Test strategy and coverage**:
+```
+Given [CHANGE], list the existing tests relevant to [CHANGE] (unit, integration, end-to-end), explain what behaviours they already cover, and specify exactly which new or updated tests are needed. Write that research to docs/test-strategy-for-change.md using the following style guide @style-guide.md.
+```
+
+**Configuration and feature flags**:
+```
+Given [CHANGE], identify configuration, environment variables, and feature flags related to the area impacted by [CHANGE], and suggest how to wire [CHANGE] behind a flag or configuration if appropriate. Write that research to docs/config-and-feature-flags.md using the following style guide @style-guide.md.
+```
+
+**Observability plan**:
+```
+Given [CHANGE], describe how observability is done (logs, metrics, tracing) for the affected flows and recommend what additional signals should be added or updated to monitor [CHANGE] in production. Write that research to docs/observability-plan.md using the following style guide @style-guide.md.
+```
+
+**Design history and constraints**:
+```
+Given [CHANGE], infer prior design decisions relevant to [CHANGE] (for example previous migrations or provider swaps) from comments or docs, and summarise any constraints or "do not break" assumptions. Write that research to docs/design-history-and-constraints.md using the following style guide @style-guide.md.
+```
+
+</details>
+
+**What to do next**:
+1. **Review the generated doc** - Check for hallucinations, misunderstandings from bad comments, confusion from poorly named variables
+2. **Don't fix it yourself** - AI is better at writing concise, rule-following text. Talk to AI until it understands the issues and fixes the file
+3. **Commit the doc** - You now have a concise source of truth for that aspect of your codebase
+
+**Use it for**:
+- Clearing confusion when AI gets lost
+- Onboarding junior engineers who keep asking the same questions
+- Understanding complex PR changes touching the "do not touch" parts of the codebase
+- Planning your next change without loading 30 files
 
 ---
 
 ## What Is AISD?
 
-A format for writing the docs you'd give a junior engineer - but structured for AI.
+A documentation format that creates a high-density abstraction layer over your codebase.
 
 **Key ideas:**
 - **Tables instead of prose** - Scannable, not walls of text
@@ -40,31 +179,41 @@ A format for writing the docs you'd give a junior engineer - but structured for 
 - **Explicit constraints instead of descriptions** - "1-200 chars" not "short"
 - **Small files (200-500 lines) instead of monoliths** - Selective loading
 
+**What it does:**
+- **Reduces tokens** - AI loads 3,000 lines of specs instead of 50,000 lines of code
+- **Documents decisions** - Architecture, responsibilities, constraints captured as you build
+- **Enables analysis** - AI answers questions about your system from structured docs, not scattered code
+- **Improves PRs** - Every change comes with updated docs showing what changed
+- **Supports planning** - Structured specs reveal edge cases and dependencies before coding
+
 **Not**: Magic AI agent that does everything
-**Is**: A format that compresses signal, cuts noise
-
-**Think compression ratios:**
-- **Your codebase**: 50,000 lines across 200 files
-- **Traditional docs**: 15,000 lines of prose (if you even have them)
-- **AISD abstraction**: 3,000 lines of structured specs
-
-**Result**: AI gets the context it needs without drowning in code.
+**Is**: A format that compresses signal, cuts noise, documents as you go
 
 ## The Problem
 
 You're using Cursor or Claude Code on a real codebase.
 
-**Scenario**: Add fraud detection to your refund system
+**Common scenarios:**
 
-**What AI does**:
-- Loads 30 files trying to understand the refund flow
-- Finds the refund service, payment processor, user management
-- Reads database schemas, config files, tests
-- Burns 50,000 tokens just to understand what's there
-- Still misses the business rules buried in comments
-- Generates code that "works" but violates policies
+**Analyzing**: "Why can users only get 3 refunds per year?"
+- AI loads 30 files looking for the business rule
+- Burns 50k tokens reading implementation details
+- Finds conflicting logic in multiple places
+- Gives you an uncertain answer
 
-**Why**: Even with 200k token windows, AI loads files speculatively. Most of what it loads is noise (imports, boilerplate, implementation details). The signal is scattered.
+**Planning**: "How would I add fraud detection to refunds?"
+- AI loads refund service, user service, payment processing
+- Misses the dependency on email notifications
+- Doesn't realize inventory needs updating
+- Plan has gaps you discover during implementation
+
+**Implementing**: "Add email when refund is denied"
+- AI generates code that looks right
+- Misses the audit logging requirement
+- Breaks the existing fraud check
+- You explain the constraint again
+
+**Why**: Even with 200k token windows, AI loads files speculatively. Most of what it loads is noise (imports, boilerplate, implementation). The signal is scattered across code, comments, and tribal knowledge.
 
 ## The AISD Approach
 
@@ -280,18 +429,23 @@ Each AISD doc is:
 
 ## Why This Works
 
-**Without AISD**:
-- You: "Add email notifications"
-- AI loads 10 files, misses the fraud rule buried in RefundService line 247
-- You: "No, check the fraud detection logic"
-- AI: "Oh right" (hallucinates the rule)
+**For analyzing:**
+- **Without AISD**: AI loads 10 files, finds conflicting logic, gives uncertain answer
+- **With AISD**: AI loads `business-rules.md` (50 lines), sees authoritative rule in table
 
-**With AISD**:
-- You create docs/refunds/business-rules.md with the fraud rule in a table
-- AI loads 1 doc (50 lines), sees the exact rule
-- AI implements correctly or you catch the mistake in the doc review
+**For planning:**
+- **Without AISD**: AI misses dependencies, plan has gaps discovered during coding
+- **With AISD**: AI loads `integration.md` + `behavior.md`, sees all cross-domain calls upfront
 
-**The docs are your savepoint**. If AI fucks up, reset and try again with better context.
+**For implementing:**
+- **Without AISD**: AI generates code, misses constraint, you explain again
+- **With AISD**: Constraint is in docs AI already loaded, or you catch the gap in doc review
+
+**For PRs:**
+- **Without AISD**: Reviewer reads 500 lines of code changes, guesses at intent
+- **With AISD**: Reviewer reads updated docs first (20 lines), sees what changed and why
+
+**The docs are your savepoint**. If AI fails at any stage, reset and improve the docs.
 
 ---
 
@@ -427,30 +581,33 @@ docs/
 
 ## What AISD Helps With
 
-### Goals:
+### Use AISD for:
 
-1. **Reduce hallucinations** - Explicit constraints guide AI
-2. **Improve consistency** - Structured docs reduce variability
-3. **Optimize context** - Selective loading prevents over-loading
-4. **Enable mixed context** - Load tasks/model.md + users/behavior.md (impossible with large files)
-5. **Prevent cascade loading** - Self-contained files, no chain dependencies
-6. **Catch errors early** - Explicit constraints reveal edge cases
+1. **Token reduction** - Load 3k lines of structured docs instead of 50k lines of code
+2. **Codebase analysis** - AI answers questions from authoritative docs, not scattered code
+3. **Change planning** - See dependencies and edge cases before writing code
+4. **Code generation** - AI has complete context without loading 30 files
+5. **PR reviews** - Docs show what changed; code shows how
+6. **Architecture documentation** - Decisions and responsibilities captured as you build
+7. **Onboarding AI** - New AI session loads docs, understands system in seconds
 
 ### Expected improvements:
 
 **Before AISD**:
-- AI generates 10 different implementations from vague spec
-- Code compiles but uses nonexistent APIs
-- Large multi-responsibility files force AI to load everything
-- Cross-domain references cause cascade loading (User → Order → Product → ...)
+- AI loads 30 files speculatively, burns 50k tokens, still misses context
+- Explanations scattered across code, comments, old PRs
+- Planning reveals gaps during implementation
+- PRs are pure code review with guessed intent
+- Each new AI session starts from zero
 
 **After AISD**:
-- AI generates more consistent implementations
-- Explicit constraints reduce invalid code
-- Small files enable precise loading (load only needed entities)
-- Mixed context composition (tasks/model.md + users/behavior.md, skip unneeded files)
+- AI loads 5-6 targeted docs, burns 3k tokens, has complete picture
+- Single source of truth for rules, architecture, decisions
+- Planning reveals gaps before coding (cheaper to fix)
+- PRs show intent in docs, implementation in code
+- New AI session loads docs, ready to work
 
-**Note**: LLMs use stochastic decoding, so outputs vary between runs. AISD reduces variability but doesn't guarantee identical outputs.
+**Note**: LLMs use stochastic decoding, so outputs vary. AISD reduces variability but doesn't guarantee identical outputs.
 
 ---
 
@@ -603,18 +760,6 @@ done
 
 echo "✅ Docs OK"
 ```
-
----
-
-## Philosophy
-
-**Code is for machines. Traditional docs are for humans. AISD is for AI.**
-
-When AI reads your code, it drowns in noise. When AI reads prose docs, it drowns in ambiguity. AISD is the signal extracted - structured, explicit, dense.
-
-Think of it as: Human intent → AI abstraction → Human review → AI implementation
-
-You're not writing docs. AI is. You're reviewing them like code.
 
 ---
 
